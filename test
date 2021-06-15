@@ -1,0 +1,341 @@
+<?php $this->load->view('header'); ?>
+
+<link rel="stylesheet" type="text/css" href="<?php echo base_url()?>js/codebase/dhtmlxlayout.css">
+<link rel="stylesheet" type="text/css" href="<?php echo base_url()?>js/codebase/skinsLayout/dhtmlxlayout_dhx_skyblue.css">
+<script src="<?php echo base_url()?>js/codebase/dhtmlxlayout.js"></script>
+<script src="<?php echo base_url()?>js/codebase/dhtmlxtoolbar.js"></script>
+<script src="<?php echo base_url()?>js/codebase/dhtmlxtoolbar_start.js"></script>
+<script src="<?php echo base_url()?>js/codebase/dhtmlxcontainer.js"></script>
+
+<link rel="stylesheet" type="text/css" href="<?php echo base_url()?>js/codebase/skinsToolbar/dhtmlxtoolbar_dhx_skyblue.css">
+
+<link type="text/css" rel="stylesheet" href="<?= base_url() ?>dboard/css/custom-theme/jquery-ui-1.8.21.custom.css" media="">
+<script type="text/javascript" src="<?= base_url() ?>dboard/js/jquery-1.7.2.min.js"></script>
+<script type="text/javascript" src="<?= base_url() ?>dboard/js/jquery-ui-1.8.21.custom.min.js"></script>
+
+<script>
+
+  var jumlahRevisi = 0;
+  
+  $( document ).ready(function() {
+	$(document).ajaxStart(function(){
+        $("#loader").css("display", "block");
+    });
+    $(document).ajaxComplete(function(){
+        $("#loader").css("display", "none");
+    });
+    $(window).load(function(){
+		jumlahRevisi = "<? echo isset($indent['JUMLAHREVISI']) == true ? $indent['JUMLAHREVISI'] : "Indent masih dalam tahap prospek"; ?>";
+		if(jumlahRevisi == "Indent masih dalam tahap prospek"){
+			alert(jumlahRevisi);
+			window.location.replace('<?php echo site_url('cindentrevbatal/cmdcek/')?>');
+		}
+		$('#jumlahRevisi').text(jumlahRevisi);
+	});
+  });
+ 	  
+	function createFLP()
+	{
+		
+	}
+
+  var submit = "";
+  window.dhx_globalImgPath = "<?php echo base_url() ?>js/codebase/imgs/";   
+
+	function cmdReset()
+	{
+		$('#formRevisi').each(function () {
+			this.reset();
+		});
+	}
+
+	function saveProcess()
+	{
+		if (jumlahRevisi >= 2)
+		{
+			alert('Revisi tidak bisa disimpan, maksimal revisi hanya sebanyak 2 kali');
+			return;
+		}
+		
+		if (validateForm(document.formRevisi))
+		{
+			$('#btnSave').prop('disabled',true);
+			var data = {};
+			$('#formRevisi').find('input, textarea, select').each(function (i, field)
+			{
+				data[field.name] = field.value.trim();
+			});
+			
+			$.post("<?= site_url('cindentrevbatal/saveRevisi') ?>/", data,
+				function (datax)
+				{
+					//alert("Data Loaded: " + datax);
+					var respon = datax.split(';');
+					if (respon[0] == 'sukses')
+					{
+						if (document.formRevisi.txtPilihRevisi.value == 1) 
+						{
+							alert('Perubahan Nama berhasil dilakukan');
+						}
+						else if (document.formRevisi.txtPilihRevisi.value == 2) 
+						{
+							alert('Perubahan NOKTP berhasil dilakukan');
+						}
+						else if (document.formRevisi.txtPilihRevisi.value == 3) 
+						{
+							alert('Perubahan Alamat berhasil dilakukan');
+						}
+						
+						jumlahRevisi +=1;
+						
+						$('#jumlahRevisi').text(jumlahRevisi);										
+						
+						window.location.href ='<?php echo site_url('cindentrevbatal/cmdcek')?>' ;
+						
+					} else if (respon[0] == 'gagal')
+					{
+						alert("Indent gagal dengan error sbb : \n" + respon[1]);
+					} else
+					{
+					  //alert(datax);
+					}
+					
+					
+				});
+			
+			//document.formRevisi.action='<?php echo site_url('cindentrevbatal/cmdcek')?>' ;
+			//document.formRevisi.submit();
+		}
+	}
+	
+	function validateForm(formx)
+	{
+		var valid = true;
+		var errormsg = '';
+		
+		if (formx.txtNAMAPEMBELI.value.trim() == '')
+		{
+			errormsg = errormsg + '- Kolom nama harus terisi!\n';
+		}
+		if (formx.txtNOKTP.value.trim() == '')
+		{
+			errormsg = errormsg + '- Kolom nomor KTP harus terisi!\n';
+		}
+		if (formx.txtALAMATPEMBELI.value.trim() == '')
+		{
+			errormsg = errormsg + '- Kolom alamat pembeli harus terisi!\n';
+		}
+		if (formx.txtALAMAT2PEMBELI.value.trim() == '')
+		{
+			errormsg = errormsg + '- Kolom alamat 2 pembeli harus terisi!\n';
+		}
+		
+		if (errormsg != '')
+		{
+			alert(errormsg);
+			valid = false;
+		}
+		else
+		{
+			valid = true;
+		}
+		
+		return valid;
+	}
+
+	function batalProcess()
+	{
+		document.formRevisi.action='<?php echo site_url('cindentrevbatal/cmdcek')?>' ;
+		document.formRevisi.submit();
+	}
+
+
+  function cmdProcess(stateFlow)
+  {
+
+    //alert('Sedang dalam perbaikan , kurang lebih selama 60 menit. Mohon maaf atas ketidaknyamanan ini.');
+
+	submit = stateFlow;
+    $("#dialog-modal").dialog("open");
+    if (validateFieldIndent(document.formDlr))
+    {
+      if (confirm("Anda yakin akan memasukan data Indent ini ?"))
+      {
+        //showPopup();
+
+        var params = document.formDlr.txtTipewarna.value;
+        var url = "<?php echo site_url('cinpindent/ceketd') ?>/" + params;
+        document.formDlr.txtEtdate.value = getMessages(url);
+		if (confirm("Perkiraan Tgl Pemenuhan telah berubah menjadi " + document.formDlr.txtEtdate.value + ". Yakin Melanjutkan?"))
+         {
+			if (document.formDlr.txtEtdate.value == document.formDlr.txtTglEtd.value)
+			{
+			  $("#dialog-modal").dialog("open");
+			  var data = {};
+			  $('#formDlr').find('input, textarea, select').each(function (i, field)
+			  {
+				data[field.name] = field.value;
+			  });
+
+			  $.post("<?= site_url('cinpindent/adds') ?>/"+stateFlow, data,
+					  function (datax)
+					  {
+						//alert("Data Loaded: " + datax);
+						var respon = datax.split(';');
+						if (respon[0] == 'sukses')
+						{
+						  alert('Indent tersimpan dengan nomor : ' + respon[1]);
+						  cmdReset();
+						  document.formDlr.txtTimeId.value = respon[2];
+						  document.formDlr.txtSalesman.value = '';
+						} else if (respon[0] == 'gagal')
+						{
+						  alert("Indent gagal dengan error sbb : \n" + respon[1]);
+						} else
+						{
+						  //alert(datax);
+						}
+						//$( "#dialog-modal" ).close(); hidePopup();
+						$("#dialog-modal").dialog('close');
+					  });
+					  }
+        } else
+        {
+          if (confirm("Perkiraan Tgl Pemenuhan telah berubah menjadi " + document.formDlr.txtEtdate.value + ". Yakin Melanjutkan?"))
+          {
+            $.post("<?= site_url('cinpindent/adds') ?>/"+stateFlow, data,
+                    function (datax)
+                    {
+                      //alert("Data Loaded: " + datax);
+                      var respon = datax.split(';');
+                      if (respon[0] == 'sukses')
+                      {
+                        alert('Indent tersimpan dengan nomor : ' + respon[1]);
+                        cmdReset();
+                        document.formDlr.txtTimeId.value = respon[2];
+                      } else if (respon[0] == 'gagal')
+                      {
+                        alert("Indent gagal dengan error sbb : \n" + respon[1]);
+                      }
+                      //hidePopup();
+                      $("#dialog-modal").dialog('close');
+                    });
+          }
+          //hidePopup();
+          $("#dialog-modal").dialog('close');
+        }
+      } else
+      {
+        $("#dialog-modal").dialog("close");
+      }
+    } else
+    {
+      $("#dialog-modal").dialog("close");
+    }
+
+
+  }  
+
+$(function () {
+    // a workaround for a flaw in the demo system (http://dev.jqueryui.com/ticket/4375), ignore!
+    $("#dialog:ui-dialog").dialog("destroy");
+
+    $("#dialog-modal").dialog({
+		height: 140,
+		modal: true,
+		autoOpen: false,
+		show: "blind",
+		hide: "explode"
+    });		
+    
+});
+
+</script>
+<div id="dialog-modal" title="Tunggu sebentar">
+  Sedang mempersiapkan data<br>
+  <img src="<?php echo base_url() ?>images/loadingAnimation1.gif">
+</div>
+
+<div align="center">
+  <table width='100%' align='center'>
+    <tr><td align="center">        
+
+        <form name='formRevisi' id='formRevisi' method='post' enctype='multipart/form-data'>
+		
+		<table width="100%" class="top_menu_bottom" >
+			<tbody>
+				<tr>
+					<td class="dinamic">
+						<div align='left'>Revisi Data Indent</div>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+          <table  width="100%" class="top_menu" align='left'>                        
+            <tr class="dinamic1" >
+              <td width="150" colspan="2"><b> Perubahan revisi ke <span id="jumlahRevisi"></span> </b></td>              
+            </tr>
+            <tr class="dinamic1" >
+              <td width="150" colspan="2" style="color:grey"><b> Note : Maks revisi 2 kali </b></td>              
+            </tr>
+            <tr class="dinamic1" >
+              <td width="150"><b> Nama :</b></td>
+              <td>
+                <?php echo $this->htmlx->writeInputText("NAMAPEMBELI", 60, 60, $indent['NAMAPEMBELI'], ($pilihrevisi== 1 ? false : true) ); ?>
+              </td>
+            </tr>
+            <tr class="dinamic1" >
+              <td width='150'><b> No Ktp :</b></td>
+              <td>
+                <?php echo $this->htmlx->writeInputText("NOKTP", 50, 60, $indent['NOKTP'], ($pilihrevisi== 2 ? false : true) ); ?>
+              </td>
+            </tr>
+            <tr class="dinamic1" >
+              <td width='150'><b> Alamat 1 :</b></td>
+              <td>
+                <?php echo $this->htmlx->writeInputText("ALAMATPEMBELI", 60, 60, $indent['ALAMATPEMBELI'], ($pilihrevisi== 3 ? false : true) ); ?>
+              </td>
+            </tr>
+            <tr class="dinamic1" >
+              <td width='150'><b> Alamat 2 :</b></td>
+              <td>
+				<?php echo $this->htmlx->writeInputText("ALAMAT2PEMBELI", 60, 60, $indent['ALAMAT2PEMBELI'], ($pilihrevisi== 3 ? false : true) ); ?>
+              </td>
+            </tr>
+            <tr class="dinamic1" >
+              <td width='150'><b> Kota :</b></td>
+              <td>
+				<select name="txtKota" id="txtKota" <? if ($pilihrevisi != 3 ) { ?>  readonly disabled <? } ?> >
+				<?php
+				foreach ($kotas as $kota) {
+				  $selected = "";
+				  ?>
+                    <option value="<?php echo $kota['KODE'] ?>" <? if ($kota['NAMA'] == $indent['KOTA'] ) echo 'selected' ?> ><?php echo $kota["NAMA"] ?></option>
+				<?php } ?>
+                </select>
+              </td>
+            </tr>
+			<div id="loader" name="loader" style="display:none;position:absolute;top:50%;left:50%;padding:2px;">
+				<img src='<?php echo base_url()?>/images/loadingAnimation1.gif' />
+			</div>
+			<tr class="dinamic1" >
+              <td colspan=2  align='center'>  
+				<input type='hidden' name='txtNoIndent' value=<?echo $indent['TEMP_NO_INDEN']?> >
+				<input type='hidden' name='txtPilihRevisi' value=<?echo $pilihrevisi?> >
+                <input type='button' name='btnSave' id='btnSave' value='Save' onclick="saveProcess()" >
+				<input type='button' name='btnBatal' id='btnBatal' value='Batal' onclick="batalProcess()" >                
+              </td>
+            </tr>
+          </table>
+        </form>
+      </td>
+    </tr>
+    <tr>
+      <td align="center">
+        <div color="#000000"><?php echo ($pesan) ? $pesan : ""; ?></div>
+      </td>
+    </tr>    
+  </table>
+
+</div>
+<?php $this->load->view('footer'); ?>
